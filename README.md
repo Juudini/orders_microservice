@@ -4,6 +4,8 @@
 
 # Orders Microservice
 
+![Ing Progress](https://img.shields.io/badge/Status-In%20Progress-yellow)
+
 <!-- ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository. -->
@@ -12,7 +14,7 @@
 
 ```bash
 # clone this repository
-$ git clone https://github.com/Microservices-Nest/orders_microservice.git
+$ git clone https://github.com/Juudini/orders_microservice.git
 
 # move to project directory
 $ cd orders_microservice
