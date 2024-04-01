@@ -3,10 +3,14 @@ import { OrderStatusList } from '../enum/order.enum';
 import { OrderStatus } from '@prisma/client';
 
 export class ChangeOrderStatusDto {
-  @IsUUID()
+  @IsUUID(4)
   id: string;
+
+  // @IsEnum(OrderStatusList, {
+  //   message: `Status must be one of the following values: ${Object.values(OrderStatusList).join(', ')}`,
+  // })
   @IsEnum(OrderStatusList, {
-    message: `Status must be one of the following values: ${Object.values(OrderStatusList).join(', ')}`,
+    message: `Valid status are ${OrderStatusList}`,
   })
   status: OrderStatus;
 }

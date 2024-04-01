@@ -3,7 +3,7 @@ import * as joi from 'joi';
 
 interface EnvVars {
   PORT: number;
-  NATS_SERVERS: string;
+  NATS_SERVERS: string[];
 }
 
 const envsSchema = joi

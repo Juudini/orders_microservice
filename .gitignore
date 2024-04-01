@@ -4,7 +4,8 @@
 /build
 postgres/
 /prisma/migrations
-
+package-lock.json
+pnpm-lock.yaml
 # Logs
 logs
 *.log

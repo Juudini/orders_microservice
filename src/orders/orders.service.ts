@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   HttpStatus,
   Inject,
@@ -12,8 +13,10 @@ import {
   ChangeOrderStatusDto,
   OrderPaginationDto,
   CreateOrderDto,
+  PaidOrderDto,
 } from './dto';
 import { NATS_SERVICE } from 'src/config';
+import { OrderWithProducts } from './interfaces/order-with-products.interface';
 
 @Injectable()
 export class OrdersService extends PrismaClient implements OnModuleInit {
@@ -30,25 +33,28 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
   async create(createOrderDto: CreateOrderDto) {
     try {
-      const productIds = createOrderDto.items.map(item => item.productId);
+      const productIds = createOrderDto.items.map((item) => item.productId);
 
       const products: any[] = await firstValueFrom(
         this.client.send({ cmd: 'validate_products' }, productIds),
       );
+
       const totalAmount = createOrderDto.items.reduce((acc, orderItem) => {
         const price = products.find(
-          product => product.id === orderItem.productId,
+          (product) => product.id === orderItem.productId,
         );
-        return price.price * orderItem.quantity + acc;
+        //return price.price * orderItem.quantity + acc;
+        return price * orderItem.quantity;
         // todo: check
       }, 0);
 
       const totalItems = createOrderDto.items.reduce((acc, orderItem) => {
-        return orderItem.quantity + acc;
+        //return orderItem.quantity + acc;
+        return acc + orderItem.quantity;
       }, 0);
 
-      const orderItemsData = createOrderDto.items.map(orderItem => ({
-        price: products.find(product => product.id === orderItem.productId)
+      const orderItemsData = createOrderDto.items.map((orderItem) => ({
+        price: products.find((product) => product.id === orderItem.productId)
           .price,
         productId: orderItem.productId,
         quantity: orderItem.quantity,
@@ -77,9 +83,9 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
       return {
         ...order,
-        OrderItem: order.OrderItem.map(orderItem => ({
+        OrderItem: order.OrderItem.map((orderItem) => ({
           ...orderItem,
-          name: products.find(product => product.id === orderItem.productId)
+          name: products.find((product) => product.id === orderItem.productId)
             .name,
         })),
       };
@@ -123,7 +129,7 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       include: {
         OrderItem: {
           select: {
-            orderId: true,
+            // orderId: true,
             price: true,
             productId: true,
             quantity: true,
@@ -139,16 +145,17 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
       });
     }
 
-    const productIds = order.OrderItem.map(orderItem => orderItem.productId);
+    const productIds = order.OrderItem.map((orderItem) => orderItem.productId);
     const products: any[] = await firstValueFrom(
       this.client.send({ cmd: 'validate_products' }, productIds),
     );
 
     return {
       ...order,
-      OrderItem: order.OrderItem.map(orderItem => ({
+      OrderItem: order.OrderItem.map((orderItem) => ({
         ...orderItem,
-        name: products.find(product => product.id === orderItem.productId).name,
+        name: products.find((product) => product.id === orderItem.productId)
+          .name,
       })),
     };
   }
@@ -163,7 +170,46 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
 
     return this.order.update({
       where: { id },
-      data: { status: status },
+      data: { status },
     });
+  }
+
+  async createPaymentSession(order: OrderWithProducts) {
+    const paymentSession = await firstValueFrom(
+      this.client.send('create.payment.session', {
+        orderId: order.id,
+        currency: 'usd',
+        items: order.OrderItem.map((item) => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      }),
+    );
+
+    return paymentSession;
+  }
+
+  async paidOrder(paidOrderDto: PaidOrderDto) {
+    this.logger.log('Order Paid');
+    this.logger.log(paidOrderDto);
+
+    const order = await this.order.update({
+      where: { id: paidOrderDto.orderId },
+      data: {
+        status: 'PAID',
+        paid: true,
+        paidAt: new Date(),
+        stripeChargeId: paidOrderDto.stripePaymentId,
+
+        OrderReceipt: {
+          create: {
+            receiptUrl: paidOrderDto.receiptUrl,
+          },
+        },
+      },
+    });
+
+    return order;
   }
 }
