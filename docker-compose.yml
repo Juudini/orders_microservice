@@ -8,7 +8,7 @@ services:
     volumes:
       - ./postgres:/var/lib/postgresql/data
     ports:
-      - '${DOCKER_PORT}:${DB_PORT}'
+      - ${DOCKER_PORT}:${DB_PORT}
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
