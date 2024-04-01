@@ -1,8 +1,8 @@
 {
-  "name": "orders-ms",
+  "name": "orders_microservice",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": "Juan Debandi",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
